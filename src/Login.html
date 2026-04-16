@@ -1,18 +1,249 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GoalPost Login</title>
 
-export default function Login({ onLogin }) {
-  const [email, setEmail] = useState("");
-
-  return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-      <div style={{ background: "#222", padding: "20px", borderRadius: "10px" }}>
-        <h2>Login</h2>
-        <input
-          placeholder="Email"
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button onClick={() => onLogin({ email })}>Login</button>
-      </div>
-    </div>
-  );
+<style>
+:root {
+  --bg:#0f0a1f;
+  --card:#1a1333;
+  --text:#f3f0ff;
+  --muted:#b9b3d9;
+  --accent:#a855f7;
+  --accent-glow:#c084fc;
+  --border:#2a1f4a;
 }
+
+body {
+  margin:0;
+  font-family:system-ui;
+  background: radial-gradient(circle at top, #1a1333, #0f0a1f);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  color:var(--text);
+}
+
+.card {
+  background:var(--card);
+  padding:28px;
+  border-radius:16px;
+  width:320px;
+  border:1px solid var(--border);
+  box-shadow:0 10px 40px rgba(0,0,0,0.4);
+}
+
+h2 {
+  color:#c084fc;
+}
+
+p {
+  color: var(--muted);
+}
+
+input {
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:#120d25;
+  color:white;
+}
+
+input:focus {
+  outline:none;
+  border-color:var(--accent);
+}
+
+button {
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
+  background:var(--accent);
+  color:white;
+  cursor:pointer;
+  box-shadow:0 0 10px var(--accent-glow);
+  transition:0.2s;
+}
+
+button:hover {
+  transform:scale(1.03);
+  box-shadow:0 0 18px var(--accent-glow);
+}
+
+.error {
+  color:#ff6b6b;
+  margin-top:10px;
+  font-size:14px;
+}
+
+.hidden {
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>GoalPost</h2>
+  <p id="subtitle">Stay on top of your goals and schedule</p>
+
+  <!-- Login Form -->
+  <div id="loginSection">
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+    <button onclick="showRegister()">Create Account</button>
+  </div>
+
+  <!-- Register Form -->
+  <div id="registerSection" class="hidden">
+    <input id="fullName" placeholder="Full Name">
+    <input id="registerEmail" placeholder="Email">
+    <input id="confirmEmail" placeholder="Confirm Email">
+    <input id="registerPassword" type="password" placeholder="Password">
+    <input id="confirmPassword" type="password" placeholder="Confirm Password">
+
+    <button onclick="register()">Register Account</button>
+    <button onclick="showLogin()">Back to Login</button>
+  </div>
+
+  <div id="error" class="error"></div>
+</div>
+
+<script>
+let users = JSON.parse(localStorage.getItem("users")) || [];
+
+function showRegister() {
+  document.getElementById("loginSection").classList.add("hidden");
+  document.getElementById("registerSection").classList.remove("hidden");
+  document.getElementById("subtitle").textContent = "Create your account";
+  clearMessage();
+}
+
+function showLogin() {
+  document.getElementById("registerSection").classList.add("hidden");
+  document.getElementById("loginSection").classList.remove("hidden");
+  document.getElementById("subtitle").textContent = "Stay on top of your goals and schedule";
+  clearMessage();
+}
+
+function clearMessage() {
+  const error = document.getElementById("error");
+  error.textContent = "";
+  error.style.color = "#ff6b6b";
+}
+
+function login() {
+  const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword").value;
+  const error = document.getElementById("error");
+
+  clearMessage();
+
+  if (!email || !password) {
+    error.textContent = "Please enter email and password.";
+    return;
+  }
+
+  const user = users.find(function(u) {
+    return u.email === email;
+  });
+
+  if (!user) {
+    error.textContent = "Email not found. Please register first.";
+    return;
+  }
+
+  if (user.password !== password) {
+    error.textContent = "Incorrect password.";
+    return;
+  }
+
+  localStorage.setItem("user", JSON.stringify({
+    fullName: user.fullName,
+    email: user.email
+  }));
+
+  window.location.href = "dashboardpage.html";
+}
+
+function register() {
+  const fullName = document.getElementById("fullName").value.trim();
+  const email = document.getElementById("registerEmail").value.trim().toLowerCase();
+  const confirmEmail = document.getElementById("confirmEmail").value.trim().toLowerCase();
+  const password = document.getElementById("registerPassword").value;
+  const confirmPassword = document.getElementById("confirmPassword").value;
+  const error = document.getElementById("error");
+
+  clearMessage();
+
+  if (!fullName) {
+    error.textContent = "Please enter your full name.";
+    return;
+  }
+
+  if (!email || !confirmEmail) {
+    error.textContent = "Please enter your email twice.";
+    return;
+  }
+
+  if (email !== confirmEmail) {
+    error.textContent = "Emails do not match.";
+    return;
+  }
+
+  if (!password || !confirmPassword) {
+    error.textContent = "Please enter your password twice.";
+    return;
+  }
+
+  if (password.length < 8) {
+    error.textContent = "Password must be at least 8 characters.";
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    error.textContent = "Passwords do not match.";
+    return;
+  }
+
+  if (users.find(function(u) {
+    return u.email === email;
+  })) {
+    error.textContent = "User already exists.";
+    return;
+  }
+
+  users.push({
+    fullName: fullName,
+    email: email,
+    password: password
+  });
+
+  localStorage.setItem("users", JSON.stringify(users));
+
+  error.style.color = "lightgreen";
+  error.textContent = "Account created! You can now log in.";
+
+  document.getElementById("fullName").value = "";
+  document.getElementById("registerEmail").value = "";
+  document.getElementById("confirmEmail").value = "";
+  document.getElementById("registerPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+
+  setTimeout(function() {
+    showLogin();
+  }, 1000);
+}
+</script>
+
+</body>
+</html>

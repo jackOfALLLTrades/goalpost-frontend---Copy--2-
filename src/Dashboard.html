@@ -1,29 +1,236 @@
-import { useState } from "react";
-import GoalCard from "./GoalCard";
-import AddGoalModal from "./AddGoalModal";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GoalPost Dashboard</title>
 
-export default function Dashboard() {
-  const [goals, setGoals] = useState([]);
-  const [show, setShow] = useState(false);
-
-  return (
-    <div style={{ padding: "20px" }}>
-      <h1>Dashboard</h1>
-
-      {goals.map((g, i) => (
-        <GoalCard key={i} goal={g} />
-      ))}
-
-      <button onClick={() => setShow(true)}>+</button>
-
-      {show && (
-        <AddGoalModal
-          onAdd={(g) => {
-            setGoals([...goals, g]);
-            setShow(false);
-          }}
-        />
-      )}
-    </div>
-  );
+<style>
+:root {
+  --bg:#0f0a1f;
+  --card:#1a1333;
+  --text:#f3f0ff;
+  --muted:#b9b3d9;
+  --accent:#a855f7;
+  --accent-glow:#c084fc;
+  --border:#2a1f4a;
 }
+
+body {
+  margin:0;
+  font-family:system-ui;
+  display:flex;
+  background: radial-gradient(circle at top, #1a1333, #0f0a1f);
+  color:var(--text);
+}
+
+.sidebar {
+  width:220px;
+  height:100vh;
+  background:#140f2a;
+  padding:20px;
+  border-right:1px solid var(--border);
+}
+
+.sidebar h2 {
+  color:#c084fc;
+}
+
+.nav-item {
+  margin-top:15px;
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+  background:#1e163d;
+}
+
+.nav-item:hover {
+  background:var(--accent);
+}
+
+.main {
+  flex:1;
+  padding:20px;
+}
+
+.goal {
+  background:var(--card);
+  padding:12px;
+  margin-top:10px;
+  border-radius:10px;
+  border:1px solid var(--border);
+}
+
+.progress {
+  height:8px;
+  background:#2a1f4a;
+  border-radius:5px;
+  margin-top:8px;
+  margin-bottom:10px;
+}
+
+.fill {
+  height:100%;
+  background:var(--accent);
+}
+
+.goal button {
+  margin-right:8px;
+  margin-top:8px;
+  padding:8px 12px;
+  border:none;
+  border-radius:8px;
+  background:var(--accent);
+  color:white;
+  cursor:pointer;
+}
+
+.add-btn {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  background:var(--accent);
+  color:white;
+  font-size:30px;
+  border:none;
+  cursor:pointer;
+  box-shadow:0 0 14px var(--accent-glow);
+}
+
+.user-name {
+  font-weight:bold;
+  color:#f3f0ff;
+}
+
+.user-email {
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+}
+
+.empty {
+  margin-top:20px;
+  color:var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <h2>GoalPost</h2>
+
+  <div class="nav-item">Dashboard</div>
+  <div class="nav-item">Folders</div>
+  <div class="nav-item">Analytics</div>
+  <div class="nav-item" onclick="logout()">Logout</div>
+
+  <p style="margin-top:20px; font-size:12px;">
+    Logged in as:<br>
+    <span id="user"></span>
+  </p>
+</div>
+
+<div class="main">
+  <h1>Dashboard</h1>
+  <div id="goals"></div>
+</div>
+
+<button class="add-btn" onclick="addGoal()">+</button>
+
+<script>
+// Protect page
+let user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) {
+  window.location.href = "login.html";
+}
+
+// Show logged-in user
+document.getElementById("user").innerHTML = `
+  <div class="user-name">${user.fullName}</div>
+  <div class="user-email">${user.email}</div>
+`;
+
+// Store goals per user
+const goalsKey = "goals_" + user.email;
+let goals = JSON.parse(localStorage.getItem(goalsKey)) || [];
+
+function saveGoals() {
+  localStorage.setItem(goalsKey, JSON.stringify(goals));
+}
+
+function render() {
+  const container = document.getElementById("goals");
+  container.innerHTML = "";
+
+  if (goals.length === 0) {
+    container.innerHTML = `<div class="empty">No goals yet. Click the + button to add one.</div>`;
+    return;
+  }
+
+  goals.forEach(function(g, i) {
+    container.innerHTML += `
+      <div class="goal">
+        <b>${g.name}</b> (${g.genre})<br>
+        <span style="color:#b9b3d9;">Progress: ${g.progress}%</span>
+
+        <div class="progress">
+          <div class="fill" style="width:${g.progress}%"></div>
+        </div>
+
+        <button onclick="increase(${i})">+10%</button>
+        <button onclick="removeGoal(${i})">Delete</button>
+      </div>
+    `;
+  });
+
+  saveGoals();
+}
+
+function addGoal() {
+  const name = prompt("Goal name:");
+  if (!name) return;
+
+  const genre = prompt("Genre (Health, Social, Emotional, Business):");
+  if (!genre) return;
+
+  goals.push({
+    name: name,
+    genre: genre,
+    progress: 0
+  });
+
+  render();
+}
+
+function increase(i) {
+  if (goals[i].progress < 100) {
+    goals[i].progress += 10;
+    if (goals[i].progress > 100) {
+      goals[i].progress = 100;
+    }
+  }
+
+  render();
+}
+
+function removeGoal(i) {
+  if (!confirm("Delete this goal?")) return;
+
+  goals.splice(i, 1);
+  render();
+}
+
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = "login.html";
+}
+
+render();
+</script>
+
+</body>
+</html>
