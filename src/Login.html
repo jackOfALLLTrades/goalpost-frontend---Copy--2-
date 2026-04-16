@@ -22,8 +22,9 @@ body {
   display:flex;
   justify-content:center;
   align-items:center;
-  height:100vh;
+  min-height:100vh;
   color:var(--text);
+  padding:20px;
 }
 
 .card {
@@ -37,6 +38,7 @@ body {
 
 h2 {
   color:#c084fc;
+  margin-top:0;
 }
 
 p {
@@ -85,6 +87,52 @@ button:hover {
 .hidden {
   display:none;
 }
+
+.bar-wrap {
+  display:flex;
+  gap:4px;
+  margin-top:8px;
+}
+
+.bar {
+  height:6px;
+  flex:1;
+  background:#2a1f4a;
+  border-radius:4px;
+}
+
+.bar.active.red {
+  background:#ff4d4d;
+}
+
+.bar.active.orange {
+  background:#ff914d;
+}
+
+.bar.active.green {
+  background:#22c55e;
+}
+
+#passwordRules {
+  margin-top:10px;
+  padding-left:18px;
+  font-size:13px;
+}
+
+#passwordRules li {
+  color:#ff6b6b;
+  margin-top:4px;
+}
+
+#passwordRules li.valid {
+  color:#22c55e;
+}
+
+.note {
+  font-size:12px;
+  color:var(--muted);
+  margin-top:8px;
+}
 </style>
 </head>
 
@@ -105,10 +153,28 @@ button:hover {
 
   <!-- Register Form -->
   <div id="registerSection" class="hidden">
-    <input id="fullName" placeholder="Full Name">
+    <input id="firstName" placeholder="First Name">
+    <input id="lastName" placeholder="Last Name">
+
     <input id="registerEmail" placeholder="Email">
     <input id="confirmEmail" placeholder="Confirm Email">
+
     <input id="registerPassword" type="password" placeholder="Password">
+
+    <div class="bar-wrap">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+
+    <ul id="passwordRules">
+      <li id="lengthRule">At least 8 characters</li>
+      <li id="numberRule">Contains a number</li>
+      <li id="symbolRule">Contains a symbol (!@#$%^&*)</li>
+      <li id="caseRule">Contains uppercase and lowercase letter</li>
+    </ul>
+
     <input id="confirmPassword" type="password" placeholder="Confirm Password">
 
     <button onclick="register()">Register Account</button>
@@ -120,6 +186,9 @@ button:hover {
 
 <script>
 let users = JSON.parse(localStorage.getItem("users")) || [];
+
+const passwordInput = document.getElementById("registerPassword");
+passwordInput.addEventListener("input", updatePasswordStrength);
 
 function showRegister() {
   document.getElementById("loginSection").classList.add("hidden");
@@ -139,6 +208,51 @@ function clearMessage() {
   const error = document.getElementById("error");
   error.textContent = "";
   error.style.color = "#ff6b6b";
+}
+
+function updatePasswordStrength() {
+  const password = passwordInput.value;
+
+  const lengthValid = password.length >= 8;
+  const numberValid = /\d/.test(password);
+  const symbolValid = /[!@#$%^&*]/.test(password);
+  const caseValid = /[a-z]/.test(password) && /[A-Z]/.test(password);
+
+  updateRule("lengthRule", lengthValid);
+  updateRule("numberRule", numberValid);
+  updateRule("symbolRule", symbolValid);
+  updateRule("caseRule", caseValid);
+
+  const score = [lengthValid, numberValid, symbolValid, caseValid].filter(Boolean).length;
+  updateBars(score);
+}
+
+function updateRule(id, isValid) {
+  const el = document.getElementById(id);
+
+  if (isValid) {
+    el.classList.add("valid");
+  } else {
+    el.classList.remove("valid");
+  }
+}
+
+function updateBars(score) {
+  const bars = document.querySelectorAll(".bar");
+
+  bars.forEach(function(bar) {
+    bar.className = "bar";
+  });
+
+  for (let i = 0; i < score; i++) {
+    if (score <= 2) {
+      bars[i].classList.add("active", "red");
+    } else if (score === 3) {
+      bars[i].classList.add("active", "orange");
+    } else {
+      bars[i].classList.add("active", "green");
+    }
+  }
 }
 
 function login() {
@@ -176,7 +290,8 @@ function login() {
 }
 
 function register() {
-  const fullName = document.getElementById("fullName").value.trim();
+  const firstName = document.getElementById("firstName").value.trim();
+  const lastName = document.getElementById("lastName").value.trim();
   const email = document.getElementById("registerEmail").value.trim().toLowerCase();
   const confirmEmail = document.getElementById("confirmEmail").value.trim().toLowerCase();
   const password = document.getElementById("registerPassword").value;
@@ -185,8 +300,8 @@ function register() {
 
   clearMessage();
 
-  if (!fullName) {
-    error.textContent = "Please enter your full name.";
+  if (!firstName || !lastName) {
+    error.textContent = "Enter first and last name.";
     return;
   }
 
@@ -205,8 +320,13 @@ function register() {
     return;
   }
 
-  if (password.length < 8) {
-    error.textContent = "Password must be at least 8 characters.";
+  const lengthValid = password.length >= 8;
+  const numberValid = /\d/.test(password);
+  const symbolValid = /[!@#$%^&*]/.test(password);
+  const caseValid = /[a-z]/.test(password) && /[A-Z]/.test(password);
+
+  if (!(lengthValid && numberValid && symbolValid && caseValid)) {
+    error.textContent = "Password does not meet requirements.";
     return;
   }
 
@@ -222,6 +342,8 @@ function register() {
     return;
   }
 
+  const fullName = firstName + " " + lastName;
+
   users.push({
     fullName: fullName,
     email: email,
@@ -233,11 +355,13 @@ function register() {
   error.style.color = "lightgreen";
   error.textContent = "Account created! You can now log in.";
 
-  document.getElementById("fullName").value = "";
+  document.getElementById("firstName").value = "";
+  document.getElementById("lastName").value = "";
   document.getElementById("registerEmail").value = "";
   document.getElementById("confirmEmail").value = "";
   document.getElementById("registerPassword").value = "";
   document.getElementById("confirmPassword").value = "";
+  updatePasswordStrength();
 
   setTimeout(function() {
     showLogin();

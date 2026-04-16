@@ -71,6 +71,7 @@ body {
 .fill {
   height:100%;
   background:var(--accent);
+  border-radius:5px;
 }
 
 .goal button {
@@ -82,6 +83,11 @@ body {
   background:var(--accent);
   color:white;
   cursor:pointer;
+  box-shadow:0 0 10px rgba(192,132,252,0.25);
+}
+
+.goal button:hover {
+  opacity:0.95;
 }
 
 .add-btn {
@@ -108,11 +114,22 @@ body {
   color:var(--muted);
   font-size:12px;
   margin-top:4px;
+  word-break:break-word;
 }
 
 .empty {
   margin-top:20px;
   color:var(--muted);
+}
+
+.section-title {
+  color:#c084fc;
+  margin-bottom:4px;
+}
+
+.subtext {
+  color:var(--muted);
+  margin-top:0;
 }
 </style>
 </head>
@@ -134,27 +151,25 @@ body {
 </div>
 
 <div class="main">
-  <h1>Dashboard</h1>
+  <h1 class="section-title">Dashboard</h1>
+  <p class="subtext">Track your goals and update your progress.</p>
   <div id="goals"></div>
 </div>
 
 <button class="add-btn" onclick="addGoal()">+</button>
 
 <script>
-// Protect page
 let user = JSON.parse(localStorage.getItem("user"));
 
 if (!user) {
   window.location.href = "login.html";
 }
 
-// Show logged-in user
 document.getElementById("user").innerHTML = `
   <div class="user-name">${user.fullName}</div>
   <div class="user-email">${user.email}</div>
 `;
 
-// Store goals per user
 const goalsKey = "goals_" + user.email;
 let goals = JSON.parse(localStorage.getItem(goalsKey)) || [];
 
